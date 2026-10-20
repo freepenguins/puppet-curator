@@ -1,211 +1,136 @@
-# == Define: curator::action
+# @summary Adds an action to Curator's actions file.
 #
-# Defines a specific action
+# Each action is written under its `order`, which Curator runs in ascending
+# order, so every action needs its own. `options`, `filters`, `add` and
+# `remove` are written as given, in Curator's own format; see
+# https://www.elastic.co/guide/en/elasticsearch/client/curator/current/actionfile.html.
 #
-# === Parameters
+# Actions that work on a list of indices or snapshots need at least one
+# filter. To act on all of them, say so with `[{ 'filtertype' => 'none' }]`.
 #
-# [*name*]
-#   String.  Valid values: Alias, Allocation, Close, Create Index, Delete Indices, Delete Snapshots,
-#            Open, forceMerge, Replicas, Restore, Shrink, Snapshot
-#   Default:
+# @example Delete Logstash indices older than 30 days
+#   curator::action { 'delete old logstash indices':
+#     action  => 'delete_indices',
+#     order   => 1,
+#     options => { 'ignore_empty_list' => true },
+#     filters => [
+#       { 'filtertype' => 'pattern', 'kind' => 'prefix', 'value' => 'logstash-' },
+#       { 'filtertype' => 'age', 'source' => 'name', 'direction' => 'older',
+#         'timestring' => '%Y.%m.%d', 'unit' => 'days', 'unit_count' => 30 },
+#     ],
+#   }
 #
-# [*description*]
-#   String.  Description for the action
-#   Default: ''
+# @example Point an alias at this week's indices
+#   curator::action { 'logs-current alias':
+#     action  => 'alias',
+#     order   => 2,
+#     options => { 'name' => 'logs-current', 'warn_if_no_indices' => true },
+#     add     => {
+#       'filters' => [
+#         { 'filtertype' => 'pattern', 'kind' => 'prefix', 'value' => 'logs-' },
+#         { 'filtertype' => 'period', 'period_type' => 'relative', 'source' => 'name',
+#           'range_from' => 0, 'range_to' => 0, 'timestring' => '%Y.%m.%d', 'unit' => 'weeks' },
+#       ],
+#     },
+#     remove  => {
+#       'filters' => [
+#         { 'filtertype' => 'pattern', 'kind' => 'prefix', 'value' => 'logs-' },
+#       ],
+#     },
+#   }
 #
-# [*allocation_type*]
-#   String.  Read more about these settings at http://www.elastic.co/guide/en/elasticsearch/reference/current/shard-allocation-filtering.html
-#   Default: undef
-#
-# [*continue_if_exception*]
-#   Boolean. If continue_if_exception is set to True, Curator will attempt to continue on to the next action,
-#            if anymore, even if an exception is encountered. Curator will log but ignore the exception that was raised.
-#   Default: 'False'
-#
-# [*count*]
-#   Number.  The value for this setting is the number of replicas to assign to matching indices.
-#   Default: undef
-#
-# [*delay*]
-#   Number.  The value for this setting is the number of seconds to delay between forceMerging indices, to allow the cluster to quiesce.
-#   Default: undef
-#
-# [*delete_aliases*]
-#   Number.  The value for this setting determines whether aliases will be deleted from indices before closing.
-#   Default: undef
-#
-# [*disable_action*]
-#   Boolean. If disable_action is set to True, Curator will ignore the current action.
-#            This may be useful for temporarily disabling actions in a large configuration file.
-#   Default: False
-#
-# [*ignore_empty_list*]
-#   Boolean. Depending on your indices, and how you’ve filtered them, an empty list may be presented to the action.
-#            This results in an error condition.
-#   Default: False
-#
-# [*shrink_node*]
-#   String.  Read more about these setting at https://www.elastic.co/guide/en/elasticsearch/client/curator/current/option_shrink_node.html
-#   Default: undef
-#
-# [*copy_aliases*]
-#   Boolean. If copy_aliases is set to True, Curator will copy the source index to the target index after the successful action.
-#   Default: undef
-#
-# [*delete_after*]
-#   Boolean. Curator will delete the source index after the successful action.
-#   Default: undef
-#
-# [*node_filters*]
-#   Array. Read more about there setting at https://www.elastic.co/guide/en/elasticsearch/client/curator/current/option_node_filters.html
-#   Default: undef
-#
-# [*number_of_shards*]
-#   Number.  The value for this setting determines determines the number of primary shards in the target index.
-#   Default: undef
-#
-# [*number_of_replicas*]
-#   Number.  The value for this setting determines determines the number of replica shards per primary shard in the target index.
-#   Default: undef
-#
-# [*post_allocation*]
-#   Array.  These values will be use to apply shard routing allocation to the target index after shrinking.
-#   Default: undef
-#
-# [*shrink_prefix*]
-#   String.  This value will be prepended to target index names.
-#   Default: undef
-#
-# [*shrink_suffix*]
-#   String.  This value will be appended to target index names.
-#   Default: undef
-#
-# [*wait_for_active_shards*]
-#   String.  This value determines the number of shard copies that must be active before the client returns.
-#   Default: undef
-#
-# [*wait_for_rebalance*]
-#   Boolean.  Curator will action for index being shrunk and not wait for the cluster to fully rebalance all shards.
-#   Default: undef
-#
-#  ___TBC___
-#
-# [*filters*]
-#   Array.   Array of hashes
-#   Default: []
+# @param order
+#   The action's number in the actions file. Curator runs actions in
+#   ascending order; no two actions may share one.
+# @param action
+#   The Curator action, such as `delete_indices` or `snapshot`. Defaults to
+#   the title.
+# @param description
+#   The action's description, which Curator logs.
+# @param options
+#   The action's options, such as `{ 'repository' => 'backups' }` for
+#   `snapshot`.
+# @param filters
+#   The filters that pick the indices or snapshots to act on. Not used by
+#   `alias`, `cluster_routing`, `create_index` and `rollover`.
+# @param add
+#   `alias` only: filters for the indices to add to the alias, as
+#   `{ 'filters' => [...] }`.
+# @param remove
+#   `alias` only: filters for the indices to remove from the alias, as
+#   `{ 'filters' => [...] }`.
 define curator::action (
-  $action                 = $name,
-  $description            = $name,
-  $allocation_type        = undef,
-  $continue_if_exception  = 'False',
-  $copy_aliases           = undef,
-  $count                  = undef,
-  $delay                  = undef,
-  $delete_after           = undef,
-  $delete_aliases         = undef,
-  $disable_action         = 'False',
-  # $extra_settings = undef, #We don't support $extra_settings yet
-  $ignore_empty_list      = 'False',
-  $ignore_unavailable     = undef,
-  $include_aliases        = undef,
-  $include_global_state   = undef,
-  $indices                = undef,
-  $key                    = undef,
-  $max_num_segments       = undef,
-  $number_of_replicas     = undef,
-  $number_of_shards       = undef,
-  $node_filters           = undef,
-  $option_name            = undef,
-  $partial                = undef,
-  $post_allocation        = undef,
-  $rename_pattern         = undef,
-  $rename_replacement     = undef,
-  $repository             = undef,
-  $retry_count            = undef,
-  $retry_interval         = undef,
-  $shrink_node            = undef,
-  $shrink_prefix          = undef,
-  $shrink_suffix          = undef,
-  $skip_repo_fs_check     = undef,
-  $timeout_override       = undef,
-  $value                  = undef,
-  $wait_for_active_shards = undef,
-  $wait_for_completion    = undef,
-  $wait_for_rebalance     = undef,
-  $filters                = [],
-  $order                  = 1,
-){
-  include ::curator
+  Integer[1]                      $order,
+  Curator::ActionName             $action      = $title,
+  String[1]                       $description = $title,
+  Hash[String[1], Data]           $options     = {},
+  Array[Hash[String[1], Data]]    $filters     = [],
+  Optional[Hash[String[1], Data]] $add         = undef,
+  Optional[Hash[String[1], Data]] $remove      = undef,
+) {
+  include curator
 
-  if !member([
-    'alias',
-    'allocation',
-    'close',
-    'create_index',
-    'delete_indices',
-    'delete_snapshots',
-    'open',
-    'forcemerge',
-    'replicas',
-    'restore',
-    'shrink',
-    'snapshot',
-    ], $action) {
-    fail("Incorrect action name: ${$action}, Check https://www.elastic.co/guide/en/elasticsearch/client/curator/current/actions.html")
+  if $curator::install_only {
+    fail("curator::action[${title}]: the module doesn't manage the actions file with install_only => true.")
   }
 
-  if ($allocation_type and !member(['allocation', 'shrink',], $action)) {
-    fail("$allocation_type can only be set for action = allocation or shrink")
-  }
-  if ( $allocation_type and !member(['require', 'include', 'exclude',], $allocation_type)) {
-    fail("$allocation_type must be require, include or exclude")
-  }
-
-  if $count and $action != 'replicas' {
-    fail('$count can be set only for action = replicas')
-  }
-
-  if ($delay or $max_num_segments) and $action != 'forcemerge' {
-    fail('$delay can be set only for action = forcemerge')
-  }
-
-  if $delete_aliases and $action != 'close' {
-    fail('$delete_aliases can be set only for action = close')
-  }
-
-  if ($include_aliases or $indices or $rename_pattern or $rename_replacement) and $action != 'restore' {
-    fail('$include_aliases can be set only for action = restore')
-  }
-
-  if ($include_global_state or $ignore_unavailable or $partial or $skip_repo_fs_check) and $action != 'snapshot' {
-    fail('$include_global_state can be set only for action = snapshot')
+  case $action {
+    'alias': {
+      unless $filters.empty {
+        fail("curator::action[${title}]: alias takes its filters in add and remove, not in filters.")
+      }
+      if $add =~ Undef and $remove =~ Undef {
+        fail("curator::action[${title}]: alias needs add, remove or both.")
+      }
+      unless 'name' in $options {
+        fail("curator::action[${title}]: alias needs the alias's name in options['name'].")
+      }
+    }
+    'cluster_routing', 'create_index', 'rollover': {
+      unless $filters.empty {
+        fail("curator::action[${title}]: ${action} doesn't take filters.")
+      }
+    }
+    default: {
+      if $filters.empty {
+        fail("curator::action[${title}]: ${action} needs at least one filter; use [{ 'filtertype' => 'none' }] to act on everything.")
+      }
+    }
   }
 
-  if ($key or $value) and !member(['allocation', 'shrink',], $action) {
-    fail('$key can be set only for action = allocation or shrink')
+  if $action != 'alias' and ($add =~ NotUndef or $remove =~ NotUndef) {
+    fail("curator::action[${title}]: add and remove are only for alias.")
   }
 
-  if $repository and !member(['delete_snapshots', 'snapshot',], $action) {
-    fail('$repository can be set only for action = delete_snapshots or snapshot')
+  $fragment = "curator action ${order}"
+  if defined(Concat::Fragment[$fragment]) {
+    fail("curator::action[${title}]: order ${order} is already used by another curator::action.")
   }
 
-  if ($retry_count or $retry_interval) and $action != 'delete_snapshots' {
-    fail('$retry_count can be set only for action = delete_snapshots')
-  }
+  if $curator::ensure == 'present' {
+    $body = {
+      'action'      => $action,
+      'description' => $description,
+      'options'     => $options.empty ? {
+        true    => undef,
+        default => $options,
+      },
+      'filters'     => $filters.empty ? {
+        true    => undef,
+        default => $filters,
+      },
+      'add'         => $add,
+      'remove'      => $remove,
+    }.filter |$key, $value| { $value =~ NotUndef }
 
-  if $wait_for_completion and !member(['allocation', 'replicas', 'restore', 'snapshot', 'shrink'], $action) {
-    fail('$wait_for_completion can be set only for action = allocation or replicas or restore or snapshot or shrink')
-  }
+    # The action as YAML under its number, indented to sit under the
+    # file's "actions:" key.
+    $yaml = stdlib::to_yaml({ $order => $body }).regsubst(/\A---\n/, '')
 
-  if ($copy_aliases or $delete_after or $shrink_node or $node_filters or
-  $number_of_shards or $number_of_replicas or $post_allocation or $shrink_prefix or
-  $shrink_suffix or $wait_for_active_shards or $wait_for_rebalance) and $action != 'shrink' {
-    fail('This action can be set only for action = shrink')
-  }
-
-  concat::fragment { "${name}_action":
-    target  => $curator::actions_file,
-    content => template("${module_name}/action.erb"),
-    order   => "${order}_${name}",
+    concat::fragment { $fragment:
+      target  => $curator::actions_file,
+      content => $yaml.regsubst(/^/, '  ', 'G'),
+      order   => $order,
+    }
   }
 }

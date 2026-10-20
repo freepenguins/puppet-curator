@@ -1,0 +1,5 @@
+---
+# Debian and Ubuntu ship venv support (ensurepip) separately from python3.
+# On Ubuntu the package is in universe.
+curator::python_packages:
+  - python3-venv

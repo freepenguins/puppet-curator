@@ -1,0 +1,17 @@
+---
+lookup_options:
+  # Lets your own Hiera data add checksums for other releases.
+  curator::wheel_checksums:
+    merge: hash
+
+# 8.0.21 is the last Curator for Elasticsearch 7.14 to 8.x. Curator 9 works
+# only with Elasticsearch 9.
+curator::version: '8.0.21'
+
+# SHA-256 of elasticsearch_curator-<version>-py3-none-any.whl, as published
+# on PyPI.
+curator::wheel_checksums:
+  '8.0.21': '15dd1dc72a43f8b0b68e6a7b8ad4888103fa80e95c894603c6f676a1eaac54f4'
+  '9.0.0': '82b98d4b566d47ffbda19db3dbcdffb028ffd652bf51ed674eb726425a7d021b'
+
+curator::python_packages: []
