@@ -2,7 +2,7 @@
 #
 # Curator is installed from PyPI into a Python virtualenv in `install_dir`.
 # The Curator wheel is checked against a SHA-256 checksum; its dependencies
-# come from the package index at the versions es-client pins.
+# come from the package index, at the versions es-client asks for.
 #
 # The module writes Curator's client configuration (`curator.yml`) and an
 # actions file built from `curator::action` resources, and can run Curator
