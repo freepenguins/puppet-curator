@@ -1,12 +1,21 @@
+# This file can be used to install module dependencies for unit testing
+# See https://github.com/puppetlabs/puppetlabs_spec_helper#using-fixtures for details
+---
 fixtures:
   forge_modules:
-    apt:
-      repo: "puppetlabs/apt"
-      ref: "2.2.0"
+    # 9.x is the stdlib line that supports both Puppet 7 and Puppet 8.
     stdlib:
       repo: "puppetlabs/stdlib"
-      ref: "4.2.0"
+      ref: "9.7.0"
+    # 9.x is the newest concat that still supports Puppet 7.
     concat:
       repo: "puppetlabs/concat"
-  symlinks:
-    curator: "#{source_dir}"
+      ref: "9.1.0"
+    # 8.x is the newest puppet/systemd that still supports Puppet 7.
+    systemd:
+      repo: "puppet/systemd"
+      ref: "8.3.1"
+    # puppet/systemd 8.x needs inifile < 7.0.0.
+    inifile:
+      repo: "puppetlabs/inifile"
+      ref: "6.2.0"
